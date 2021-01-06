@@ -15,7 +15,7 @@ from starlette.middleware import Middleware
 from weebhook import set_weebhook
 from keyboard import board_1, board_2, board_3
 from functions import parser, db_list, num_list, create_reply_keyboard
-from config import TOKEN, MAIN_DB, ADMIN_DB
+from config import TOKEN, MAIN_DB, ADMIN_DB, PASSWORD
 
 client = MongoClient("localhost", 27017) 
 db = client['NEW_DB']
@@ -41,29 +41,38 @@ async def home(request: Request):
         message_handler(request)
 
 @dp.message_handler(commands=['start'], state = '*')
-async def process_start_command(msg: types.Message):
+async def process_start_command(msg: types.Message, state: FSMContext):
     await bot.send_message(msg.from_user.id, 'Добрейший вечерочек!\nПиши /help, '
                         'чтобы узнать список доступных команд!')
 
 @dp.message_handler(commands=['help'], state = '*')
-async def process_help_command(msg: types.Message):
+async def process_help_command(msg: types.Message, state: FSMContext):
     mess = text(bold('Смотри, я могу ответить за следующее:'),
                 '/info - выведет список', '/worker - поиск по должности', 
                 '/edit - внесение изменений', sep = "\n")
     await bot.send_message(msg.from_user.id, mess, parse_mode=ParseMode.MARKDOWN)
 
 @dp.message_handler(commands=['edit'], state = '*')
-async def admin_command(msg: types.Message):
+async def admin_command(msg: types.Message, state: FSMContext):
+    #user_id = msg.from_user.id
+    #acsess = collection.find({}, {_id : 0})
+    #acces_id = db_list()
+    #for i in range(len(access_id)):
+    #    if acces_id[i][0] == str(user_id):
+    #        await state.set_state(States.ADMIN)
+    #        await bot.send_message(msg.from_user.id, "Что будем делать?", reply_markup=board_3)
+    #        return
+    #await bot.send_message(msg.from_user.id, "Ошибка доступа")
     await bot.send_message(msg.from_user.id, 'Введите пароль для перехода в режим администратора: ')  
     #проверка пароля
 
 @dp.message_handler(commands=['info'], state = '*')
-async def list_command(msg: types.Message):
+async def list_command(msg: types.Message, state: FSMContext):
     await bot.send_message(msg.from_user.id, "Как много информации тебе нужно?", reply_markup=board_1)
     #клав полная - фио
 
 @dp.message_handler(commands=['worker'], state = '*')
-async def process_worker_command(msg: types.Message):
+async def process_worker_command(msg: types.Message, state: FSMContext):
     board_4 = create_reply_keyboard()
     await state.set_state(States.DELETE)
     full_text = num_list()
@@ -104,9 +113,8 @@ async def admin(msg: types.Message, state: FSMContext):
                 doc.pop('admin_id')
             full.append(doc)
         new_collection.insert_many(full)
+        state.reset_state()
         await bot.send_message(msg.from_user.id, "Все изменения сохранены", reply_markup=ReplyKeyboardRemove())
-    else:
-        echo(msg, state)
 
 @dp.message_handler(state=States.DOLJ, content_types=['text'])
 async def dolj(msg: types.Message, state: FSMContext):
@@ -265,6 +273,9 @@ async def echo(msg: types.Message, state: FSMContext):
                 for g in full[i]:
                     full_text += g + '\n'
                 await bot.send_message(msg.from_user.id, full_text)
+    elif text == PASSWORD:
+        await state.set_state(States.ADMIN)
+        await bot.send_message(msg.from_user.id, "Админь", reply_markup=board_3)
     else:
         await bot.send_message(msg.from_user.id, 'Я не знаю таких слов')
 
