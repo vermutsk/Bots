@@ -74,7 +74,6 @@ async def list_command(msg: types.Message, state: FSMContext):
 @dp.message_handler(commands=['worker'], state = '*')
 async def process_worker_command(msg: types.Message, state: FSMContext):
     board_4 = create_reply_keyboard()
-    await state.set_state(States.DELETE)
     full_text = num_list()
     await bot.send_message(msg.from_user.id, full_text)
     await bot.send_message(msg.from_user.id, "Вот все руководство, выбирай", reply_markup=board_4)
