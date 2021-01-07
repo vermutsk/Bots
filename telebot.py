@@ -35,6 +35,7 @@ class States(Helper):
     EMAIL = Item()
     PHONE = Item()
     CHANGE = Item()
+    CHANGE_ROOM = Item()
 
 async def home(request: Request):
     if request.json()['message'][0].type ==types.Message:
@@ -42,7 +43,7 @@ async def home(request: Request):
 
 @dp.message_handler(commands=['start'], state = '*')
 async def process_start_command(msg: types.Message, state: FSMContext):
-    await bot.send_message(msg.from_user.id, 'Добрейший вечерочек!\nПиши /help, '
+    await bot.send_message(msg.chat.id, 'Добрейший вечерочек!\nПиши /help, '
                         'чтобы узнать список доступных команд!')
 
 @dp.message_handler(commands=['help'], state = '*')
@@ -50,7 +51,7 @@ async def process_help_command(msg: types.Message, state: FSMContext):
     mess = text(bold('Смотри, я могу ответить за следующее:'),
                 '/info - выведет список', '/worker - поиск по должности', 
                 '/edit - внесение изменений', sep = "\n")
-    await bot.send_message(msg.from_user.id, mess, parse_mode=ParseMode.MARKDOWN)
+    await bot.send_message(msg.chat.id, mess, parse_mode=ParseMode.MARKDOWN)
 
 @dp.message_handler(commands=['edit'], state = '*')
 async def admin_command(msg: types.Message, state: FSMContext):
@@ -62,21 +63,21 @@ async def admin_command(msg: types.Message, state: FSMContext):
     #        await state.set_state(States.ADMIN)
     #        await bot.send_message(msg.from_user.id, "Что будем делать?", reply_markup=board_3)
     #        return
-    #await bot.send_message(msg.from_user.id, "Ошибка доступа")
+    #await bot.send_message(msg.chat.id, "Ошибка доступа")
     await bot.send_message(msg.from_user.id, 'Введите пароль для перехода в режим администратора: ')  
     #проверка пароля
 
 @dp.message_handler(commands=['info'], state = '*')
 async def list_command(msg: types.Message, state: FSMContext):
-    await bot.send_message(msg.from_user.id, "Как много информации тебе нужно?", reply_markup=board_1)
+    await bot.send_message(msg.chat.id, "Как много информации тебе нужно?", reply_markup=board_1)
     #клав полная - фио
 
 @dp.message_handler(commands=['worker'], state = '*')
 async def process_worker_command(msg: types.Message, state: FSMContext):
     board_4 = create_reply_keyboard()
     full_text = num_list()
-    await bot.send_message(msg.from_user.id, full_text)
-    await bot.send_message(msg.from_user.id, "Вот все руководство, выбирай", reply_markup=board_4)
+    await bot.send_message(msg.chat.id, full_text)
+    await bot.send_message(msg.chat.id, "Вот все руководство, выбирай", reply_markup=board_4)
     #выводит клав с должностями
 
 @dp.message_handler(state=States.ADMIN, content_types=['text'])
@@ -175,7 +176,12 @@ async def change(msg: types.Message, state: FSMContext):
         change = adm_collection.find({}, {'_id' : 0}).skip(code).limit(1)
         full = db_list(change)
         user_id = msg.from_user.id
-        if len(full[0]) > 7:
+        if len(full) < 1:
+            full_text = num_list()
+            await bot.send_message(msg.from_user.id, full_text)
+            await bot.send_message(msg.from_user.id, "Выбери кого редактироать клавиатуре!", reply_markup=board_4)
+            return
+        elif len(full[0]) > 7:
             if full[0][7] != str(user_id):
                 await bot.send_message(msg.from_user.id, 'Редактирование сейчас недоступно, выберите другого человека', reply_markup=board_4)
                 return
@@ -197,12 +203,13 @@ async def change(msg: types.Message, state: FSMContext):
                             "ну или выбирай, что будем делать", reply_markup=board_3)
     else:
         butt_list = ['Должность', 'Фамилия', 'Имя', 'Отчество', 'Кабинет', 'Телефон', 'Email']
-        key_list = ['doljname', 'Fname', 'Name', 'Oname', 'Room', 'Phone' 'Mail']
         for i in range(len(butt_list)):
             if text == butt_list[i]:
                 data = await state.get_data()
                 if 'code' in data:
                     await state.update_data(text=i)
+                    if i == 4:
+                        await state.set_state(States.CHANGE_ROOM)
                     await bot.send_message(msg.from_user.id, "Введи новое значение")
                     return
                 else:
@@ -219,6 +226,21 @@ async def change(msg: types.Message, state: FSMContext):
             await bot.send_message(msg.from_user.id, "Если это все, что ты хотел - жми 'Сохранить', ну или выбирай, что будем делать", reply_markup=board_3)
         else:
             await bot.send_message(msg.from_user.id, "Выбери, что будем менять на клавиатуре, либо напиши 'Назад', вернуться", reply_markup=board_2)
+
+@dp.message_handler(state=States.CHANGE_ROOM, content_types=['text'])
+async def change_room(msg: types.Message, state: FSMContext):
+    text = msg.text
+    key_list = ['doljname', 'Fname', 'Name', 'Oname', 'Room', 'Phone', 'Mail']
+    await state.set_state(States.CHANGE)
+    data = await state.get_data()
+    code = int(data['code'])
+    num = int(data['text'])
+    change = adm_collection.find({}, {'_id' : 0}).skip(code-1).limit(1)
+    full = db_list(change)
+    new_doc = {f'{key_list[num]}' : text}
+    adm_collection.update_one({'doljname' : full[0][0]}, {"$set": new_doc})
+    await state.set_state(States.ADMIN)
+    await bot.send_message(msg.from_user.id, "Если это все, что ты хотел - жми 'Сохранить', ну или выбирай, что будем делать", reply_markup=board_3)
 
 @dp.message_handler(state=States.DELETE, content_types=['text'])
 async def delete(msg: types.Message, state: FSMContext):
@@ -251,7 +273,7 @@ async def echo(msg: types.Message, state: FSMContext):
             full_text = ''
             for i in elem:
                 full_text += i + '\n'
-            await bot.send_message(msg.from_user.id, full_text)
+            await bot.send_message(msg.chat.id, full_text)
     elif text == 'Фио':
         js = new_collection.find({}, { 'doljname' : 1, 'Fname' : 1, 'Name': 1, 'Oname': 1, '_id' : 0})
         full = db_list(js)
@@ -261,22 +283,22 @@ async def echo(msg: types.Message, state: FSMContext):
                 full_text.append(i)
             full_text.insert(1, '-')
             full_text = ' '.join(full_text)
-            await bot.send_message(msg.from_user.id, full_text)
+            await bot.send_message(msg.chat.id, full_text)
     elif text.isdigit():
         js = new_collection.find({}, { '_id' : 0})
         full = db_list(js)
-        code = int(text)
+        code = int(text)-1
         full_text = ''
         for i in range(len(full)):
             if code == i:
                 for g in full[i]:
                     full_text += g + '\n'
-                await bot.send_message(msg.from_user.id, full_text)
+                await bot.send_message(msg.chat.id, full_text)
     elif text == PASSWORD:
         await state.set_state(States.ADMIN)
         await bot.send_message(msg.from_user.id, "Админь", reply_markup=board_3)
     else:
-        await bot.send_message(msg.from_user.id, 'Я не знаю таких слов')
+        await bot.send_message(msg.chat.id, 'Я не знаю таких слов')
 
 routes=[
     Route("/KB_8118_Bot", home, methods=['post'])]
