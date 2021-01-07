@@ -296,7 +296,7 @@ async def echo(msg: types.Message, state: FSMContext):
         for i in range(len(full)):
             if code == i:
                 for g in full[i]:
-                    full_text += g + '\n'
+                    full_text += str(g) + '\n'
                 await bot.send_message(msg.chat.id, full_text)
     elif text == PASSWORD:
         await state.set_state(States.ADMIN)
