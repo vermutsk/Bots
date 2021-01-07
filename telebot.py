@@ -112,7 +112,7 @@ async def admin(msg: types.Message, state: FSMContext):
                 doc.pop('admin_id')
             full.append(doc)
         new_collection.insert_many(full)
-        state.finish()
+        await state.finish()
         await bot.send_message(msg.from_user.id, "Все изменения сохранены", reply_markup=ReplyKeyboardRemove())
 
 @dp.message_handler(state=States.DOLJ, content_types=['text'])
