@@ -58,11 +58,10 @@ async def admin_command(msg: types.Message, state: FSMContext):
     #user_id = msg.from_user.id
     #acsess = collection.find({}, {_id : 0})
     #acces_id = db_list()
-    #for i in range(len(access_id)):
-    #    if acces_id[i][0] == str(user_id):
-    #        await state.set_state(States.ADMIN)
-    #        await bot.send_message(msg.from_user.id, "Что будем делать?", reply_markup=board_3)
-    #        return
+    #if str(user_id) in access_id:
+    #    await state.set_state(States.ADMIN)
+    #    await bot.send_message(msg.from_user.id, "Что будем делать?", reply_markup=board_3)
+    #    return
     #await bot.send_message(msg.chat.id, "Ошибка доступа")
     await bot.send_message(msg.from_user.id, 'Введите пароль для перехода в режим администратора: ')  
     #проверка пароля
@@ -121,7 +120,8 @@ async def admin(msg: types.Message, state: FSMContext):
 @dp.message_handler(state=States.DOLJ, content_types=['text'])
 async def dolj(msg: types.Message, state: FSMContext):
     dolj = msg.text                             #получаем текст из сообщения
-    if dolj.isalpha():                       
+    if dolj.isalpha(): 
+        #проверка на совпадение по долж в бд.............................................................................................
         await state.set_state(States.ADMIN)     #смена состояния на админку
         await state.update_data(doljname=dolj)  #привязка текущей инфы к состоянию
         await state.set_state(States.FIO)       #смена состояния на следующее
@@ -162,7 +162,7 @@ async def phone(msg: types.Message, state: FSMContext):
     phone = msg.text
     if phone.isdigit() is False:
         await bot.send_message(msg.from_user.id, 'Неверный формат')
-    elif phone.count('+') != 0 and phone[1:].isdigit() is False:
+    elif phone.count('+') == 0 and phone[1:].isdigit() is False:
         await bot.send_message(msg.from_user.id, 'Неверный формат')
     else:
         await state.set_state(States.ADMIN)
@@ -174,10 +174,10 @@ async def phone(msg: types.Message, state: FSMContext):
 async def email(msg: types.Message, state: FSMContext):
     email = msg.text
     if email.count('@') == 1:
-        email = email.split('@')
-        if email[0].isalnum() and email[1].count('.')==1:
-            email = email[1].split('.')
-            if email[0].isalpha() and email[1].isalpha():
+        email1 = email.split('@')
+        if email1[0].isalnum() and email1[1].count('.')==1:
+            email1 = email1[1].split('.')
+            if email1[0].isalpha() and email1[1].isalpha():
                 await state.set_state(States.ADMIN)
                 await state.update_data(Mail=email)
                 user_data = await state.get_data()  #получаем всю инфу из состояния
@@ -290,8 +290,9 @@ async def delete(msg: types.Message, state: FSMContext):
                 return
         else:
             new_doc = {'admin_id' : f'{user_id}'}
-            adm_collection.update_one({'doljname' : full[0][0]}, {"$set": new_doc})
-        adm_collection.remove({'doljname' : full[0][0]})    #удаление документа
+            old_doc = {'doljname' : full[0][0], 'Fname':full[0][1], 'Name':full[0][2], 'Oname':full[0][3], 'Room':full[0][4], 'Phone':full[0][5], 'Mail':full[0][6]}
+            adm_collection.update_one(old_doc, {"$set": new_doc})
+        adm_collection.remove(old_doc)    #удаление документа
         await state.set_state(States.ADMIN)
         await bot.send_message(msg.from_user.id, "Если это все, что ты хотел - жми 'Сохранить', ну или выбирай, что будем делать", reply_markup=board_3)
 
