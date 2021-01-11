@@ -1,12 +1,13 @@
 from threading import Timer
-from aiogram import Bot, types
+from aiogram import Bot, types, methods
 from pymongo import MongoClient
 from aiogram.utils import executor
+from aiogram.methods import GetChatMember
 from aiogram.dispatcher import Dispatcher, FSMContext
 from aiogram.utils.helper import Helper, HelperMode, Item
 from aiogram.contrib.fsm_storage.mongo import MongoStorage
 from aiogram.utils.markdown import text, bold, code
-from aiogram.types import ParseMode, ReplyKeyboardRemove
+from aiogram.types import ParseMode, ReplyKeyboardRemove, ChatMember
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.routing import Route
@@ -57,8 +58,8 @@ async def process_help_command(msg: types.Message, state: FSMContext):
 @dp.message_handler(commands=['edit'], state = '*')
 async def admin_command(msg: types.Message, state: FSMContext):
     user_id = msg.from_user.id
-    acsess = bot.get_chat_member(msg.chat.id, user_id)
-    if acsess['status'] == 'administrator' or acsess['status'] == 'creator':
+    ChatMember = GetChatMember(msg.chat.id, user_id).status
+    if ChatMember == 'administrator' or ChatMember == 'creator':
         await state.set_state(States.ADMIN)
         t = Timer(600, save_adm(user_id, state))
         t.start()
