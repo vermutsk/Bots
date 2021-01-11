@@ -81,7 +81,8 @@ async def process_worker_command(msg: types.Message, state: FSMContext):
     await bot.send_message(msg.chat.id, "Вот все руководство, выбирай", reply_markup=board_4)
     #выводит клав с нумерован должностями
 
-@dp.message_handler(state=States.ADMIN, content_types=['text']) #режим админа: ADMIN
+                        #режим админа: ADMIN
+@dp.message_handler(state=States.ADMIN, content_types=['text']) 
 async def admin(msg: types.Message, state: FSMContext):
     text = msg.text
     user_id = msg.from_user.id
@@ -265,8 +266,8 @@ async def change(msg: types.Message, state: FSMContext):
             await bot.send_message(msg.from_user.id, "Если это все, что ты хотел - жми 'Сохранить', ну или выбирай, что будем делать", reply_markup=board_3)
         else:
             await bot.send_message(msg.from_user.id, "Выбери, что будем менять на клавиатуре, либо напиши 'Назад', вернуться", reply_markup=board_2)
-
-@dp.message_handler(state=States.CHANGE_ROOM, content_types=['text'])#режим редактирования кабинета
+                            #режим редактирования кабинета
+@dp.message_handler(state=States.CHANGE_ROOM, content_types=['text'])
 async def change_room(msg: types.Message, state: FSMContext):
     text = msg.text
     key_list = ['doljname', 'Fname', 'Name', 'Oname', 'Room', 'Phone', 'Mail']
@@ -281,7 +282,8 @@ async def change_room(msg: types.Message, state: FSMContext):
     await state.set_state(States.ADMIN)
     await bot.send_message(msg.from_user.id, "Если это все, что ты хотел - жми 'Сохранить', ну или выбирай, что будем делать", reply_markup=board_3)
 
-@dp.message_handler(state=States.DELETE, content_types=['text'])#режим удаления
+                            #режим удаления
+@dp.message_handler(state=States.DELETE, content_types=['text'])
 async def delete(msg: types.Message, state: FSMContext):
     text = msg.text
     board_4 = create_reply_keyboard()
@@ -309,7 +311,8 @@ async def delete(msg: types.Message, state: FSMContext):
         await state.set_state(States.ADMIN)
         await bot.send_message(msg.from_user.id, "Если это все, что ты хотел - жми 'Сохранить', ну или выбирай, что будем делать", reply_markup=board_3)
 
-@dp.message_handler(content_types=['text'], state = '*')#вывод инфы по коммандам edit & worker
+                            #вывод инфы по командам edit & worker
+@dp.message_handler(content_types=['text'], state = '*')
 async def echo(msg: types.Message, state: FSMContext):
     text = msg.text
     #edit
