@@ -57,18 +57,16 @@ async def process_help_command(msg: types.Message, state: FSMContext):
 @dp.message_handler(commands=['edit'], state = '*')
 async def admin_command(msg: types.Message, state: FSMContext):
     user_id = msg.from_user.id
-    acsess = bot.get_chat_member(msg.chat.id, user_id)
-    for x in acsess:
-        if 'status' in x:
-            if x[1] == 'administrator' or x[1] == 'creator':
-                await state.set_state(States.ADMIN)
-                t = Timer(600, save_adm(user_id, state))
-                t.start()
-                await bot.send_message(msg.from_user.id, "Админь", reply_markup=board_3)
-                return
-            else:
-                await bot.send_message(msg.chat.id, "Ошибка доступа. Вы не являетесь админом.") 
-                return
+    acsess = bot.get_chat_member(msg.chat.id, user_id).status
+    if acsess == 'administrator' or acsess == 'creator':
+        await state.set_state(States.ADMIN)
+        t = Timer(600, save_adm(user_id, state))
+        t.start()
+        await bot.send_message(msg.from_user.id, "Админь", reply_markup=board_3)
+        return
+    else:
+        await bot.send_message(msg.chat.id, "Ошибка доступа. Вы не являетесь админом.") 
+        return
 
 @dp.message_handler(commands=['info'], state = '*')
 async def list_command(msg: types.Message, state: FSMContext):
