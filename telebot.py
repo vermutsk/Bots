@@ -1,3 +1,4 @@
+from threading import Timer
 from aiogram import Bot, types
 from pymongo import MongoClient
 from aiogram.utils import executor
@@ -14,7 +15,7 @@ from starlette.middleware import Middleware
 
 from weebhook import set_weebhook
 from keyboard import board_1, board_2, board_3
-from functions import parser, db_list, num_list, create_reply_keyboard
+from functions import parser, db_list, num_list, create_reply_keyboard, save_adm
 from config import TOKEN, MAIN_DB, ADMIN_DB, PASSWORD
 
 client = MongoClient("localhost", 27017) 
@@ -55,16 +56,16 @@ async def process_help_command(msg: types.Message, state: FSMContext):
 
 @dp.message_handler(commands=['edit'], state = '*')
 async def admin_command(msg: types.Message, state: FSMContext):
-    #user_id = msg.from_user.id
-    #acsess = collection.find({}, {_id : 0})
-    #acces_id = db_list()
-    #if str(user_id) in access_id:
-    #    await state.set_state(States.ADMIN)
-    #    await bot.send_message(msg.from_user.id, "Что будем делать?", reply_markup=board_3)
-    #    return
-    #await bot.send_message(msg.chat.id, "Ошибка доступа")
-    await bot.send_message(msg.from_user.id, 'Введите пароль для перехода в режим администратора: ')  
-    #проверка пароля
+    user_id = msg.from_user.id
+    acsess = msg.getChatMember.result.status
+    if acsess == 'administrator' or acsess == 'creator':
+        await state.set_state(States.ADMIN)
+        t = Timer(600, save_adm(user_id, state))
+        t.start()
+        await bot.send_message(msg.from_user.id, "Админь", reply_markup=board_3)
+        return
+    else:
+        await bot.send_message(msg.chat.id, "Ошибка доступа. Вы не являетесь админом.") 
 
 @dp.message_handler(commands=['info'], state = '*')
 async def list_command(msg: types.Message, state: FSMContext):
@@ -102,26 +103,23 @@ async def admin(msg: types.Message, state: FSMContext):
         await bot.send_message(msg.from_user.id, full_text)
         await bot.send_message(msg.from_user.id, "Это весь список, кого будем удалять?", reply_markup=board_4)
     elif text == 'Сохранить': #обновление коллекции, сброс состояния
-        new_collection.remove({})
-        docs = adm_collection.find({},{'_id' : 0,'edited': 0})
-        full = []
-        for doc in docs:
-            if 'admin_id' in doc:
-                if doc['admin_id'] == str(user_id):
-                    adm_collection.update_one({'doljname' : doc['doljname']}, {"$unset": {'admin_id' : 1}})
-                doc.pop('admin_id')
-            full.append(doc)
-        new_collection.insert_many(full)
-        await state.finish()
+        save_adm(user_id, state)
         await bot.send_message(msg.from_user.id, "Воистину админь")
     elif text == 'Запуск парсера':
         parser()
+    else:
+        await bot.send_message(msg.from_user.id, "Сохраните изменения, внесенные в режиме админа")
 
 @dp.message_handler(state=States.DOLJ, content_types=['text'])
 async def dolj(msg: types.Message, state: FSMContext):
     dolj = msg.text                             #получаем текст из сообщения
     if dolj.isalpha(): 
-        #проверка на совпадение по долж в бд.............................................................................................
+        change = adm_collection.find({}, {'_id' : 0, 'edited': 0})
+        full = db_list(change)
+        for i in range(len(full)):
+            if dolj in full[i]:
+                await bot.send_message(msg.from_user.id, 'Руководитель с такой должностью уже существует')
+                return
         await state.set_state(States.ADMIN)     #смена состояния на админку
         await state.update_data(doljname=dolj)  #привязка текущей инфы к состоянию
         await state.set_state(States.FIO)       #смена состояния на следующее
@@ -327,9 +325,6 @@ async def echo(msg: types.Message, state: FSMContext):
                 for g in full[i]:
                     full_text += str(g) + '\n'
                 await bot.send_message(msg.chat.id, full_text)
-    elif text == PASSWORD:
-        await state.set_state(States.ADMIN)
-        await bot.send_message(msg.from_user.id, "Админь", reply_markup=board_3)
     else:
         await bot.send_message(msg.chat.id, 'Я не знаю таких слов')
 
