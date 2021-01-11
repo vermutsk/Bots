@@ -291,7 +291,7 @@ async def delete(msg: types.Message, state: FSMContext):
             new_doc = {'admin_id' : f'{user_id}'}
             old_doc = {'doljname' : full[0][0], 'Fname':full[0][1], 'Name':full[0][2], 'Oname':full[0][3], 'Room':full[0][4], 'Phone':full[0][5], 'Mail':full[0][6]}
             adm_collection.update_one(old_doc, {"$set": new_doc})
-        adm_collection.remove(old_doc)    #удаление документа
+            adm_collection.remove(old_doc)    #удаление документа
         await state.set_state(States.ADMIN)
         await bot.send_message(msg.from_user.id, "Если это все, что ты хотел - жми 'Сохранить', ну или выбирай, что будем делать", reply_markup=board_3)
 
