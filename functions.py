@@ -97,7 +97,6 @@ def save_adm(user_id, state):
             doc.pop('admin_id')
         full.append(doc)
     new_collection.insert_many(full)
-    
 
 def db_list(js):
     many_doc = []
