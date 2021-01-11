@@ -199,7 +199,8 @@ async def email(msg: types.Message, state: FSMContext):
     else:
         await bot.send_message(msg.from_user.id, 'Неверный формат')
 
-@dp.message_handler(state=States.CHANGE, content_types=['text']) #режим внесения изменений
+                            #режим внесения изменений
+@dp.message_handler(state=States.CHANGE, content_types=['text']) 
 async def change(msg: types.Message, state: FSMContext):
     text = msg.text
     board_4 = create_reply_keyboard()
