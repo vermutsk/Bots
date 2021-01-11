@@ -1,4 +1,3 @@
-from threading import Timer
 from aiogram import Bot, types
 from pymongo import MongoClient
 from aiogram.utils import executor
@@ -6,7 +5,7 @@ from aiogram.dispatcher import Dispatcher, FSMContext
 from aiogram.utils.helper import Helper, HelperMode, Item
 from aiogram.contrib.fsm_storage.mongo import MongoStorage
 from aiogram.utils.markdown import text, bold, code
-from aiogram.types import ParseMode, ReplyKeyboardRemove, ChatMember
+from aiogram.types import ParseMode, ReplyKeyboardRemove
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.routing import Route
@@ -15,7 +14,7 @@ from starlette.middleware import Middleware
 
 from weebhook import set_weebhook
 from keyboard import board_1, board_2, board_3
-from functions import parser, db_list, num_list, create_reply_keyboard, save_adm
+from functions import parser, db_list, num_list, create_reply_keyboard
 from config import TOKEN, MAIN_DB, ADMIN_DB, PASSWORD
 
 client = MongoClient("localhost", 27017) 
@@ -56,17 +55,18 @@ async def process_help_command(msg: types.Message, state: FSMContext):
 
 @dp.message_handler(commands=['edit'], state = '*')
 async def admin_command(msg: types.Message, state: FSMContext):
-    user_id = msg.from_user.id
-    acsess = await bot.get_chat_member(msg.chat.id, user_id)
-    if acsess['status'] == 'administrator' or acsess['status'] == 'creator':
-        await state.set_state(States.ADMIN)
-        #t = Timer(600, save_adm(user_id))
-        #t.start()
-        await bot.send_message(msg.from_user.id, "Админь", reply_markup=board_3)
-        return
-    else:
-        await bot.send_message(msg.chat.id, "Ошибка доступа. Вы не являетесь админом.") 
-        return
+    #user_id = msg.from_user.id
+    #acsess = collection.find({}, {_id : 0})
+    #acces_id = db_list()
+    #if str(user_id) in access_id:
+    #    await state.set_state(States.ADMIN)
+    #запуск таймера + прописать сохранения отдельной функциеий.....................................................................
+    #    await bot.send_message(msg.from_user.id, "Что будем делать?", reply_markup=board_3)
+    #    return
+    #await bot.send_message(msg.chat.id, "Ошибка доступа")
+    await bot.send_message(msg.from_user.id, 'Введите пароль для перехода в режим администратора: ')  
+    #запуск таймера
+    #проверка пароля
 
 @dp.message_handler(commands=['info'], state = '*')
 async def list_command(msg: types.Message, state: FSMContext):
@@ -81,35 +81,39 @@ async def process_worker_command(msg: types.Message, state: FSMContext):
     await bot.send_message(msg.chat.id, "Вот все руководство, выбирай", reply_markup=board_4)
     #выводит клав с нумерован должностями
 
-                        #режим админа: ADMIN
-@dp.message_handler(state=States.ADMIN, content_types=['text']) 
+@dp.message_handler(state=States.ADMIN, content_types=['text']) #режим админа: ADMIN
 async def admin(msg: types.Message, state: FSMContext):
     text = msg.text
     user_id = msg.from_user.id
     dolj = ''
-    #создание нового документа: DOLJ, FIO, ADRESS, PHONE, EMAIL
-    if text == 'Создать': 
+    if text == 'Создать': #создание нового документа: DOLJ, FIO, ADRESS, PHONE, EMAIL
         if dolj == '':
             await state.set_state(States.DOLJ)
             await bot.send_message(msg.from_user.id, "Введи должность:" )
             return
-        #изменение существующего документа: CHANGE, CHANGE_ROOM
-    elif text == 'Изменить':
+    elif text == 'Изменить':#изменение существующего документа: CHANGE, CHANGE_ROOM
         board_4 = create_reply_keyboard()
         await state.set_state(States.CHANGE)
         full_text = num_list()
         await bot.send_message(msg.from_user.id, full_text)
         await bot.send_message(msg.from_user.id, "Это весь список, кого будем редактировать?", reply_markup=board_4)
-        #удаление документа из коллекции: DELETE
-    elif text == 'Удалить':
+    elif text == 'Удалить':#удаление документа из коллекции: DELETE
         board_4 = create_reply_keyboard()
         await state.set_state(States.DELETE)
         full_text = num_list()
         await bot.send_message(msg.from_user.id, full_text)
         await bot.send_message(msg.from_user.id, "Это весь список, кого будем удалять?", reply_markup=board_4)
-        #обновление коллекции, сброс состояния
-    elif text == 'Сохранить': 
-        await save_adm(user_id)
+    elif text == 'Сохранить': #обновление коллекции, сброс состояния
+        new_collection.remove({})
+        docs = adm_collection.find({},{'_id' : 0,'edited': 0})
+        full = []
+        for doc in docs:
+            if 'admin_id' in doc:
+                if doc['admin_id'] == str(user_id):
+                    adm_collection.update_one({'doljname' : doc['doljname']}, {"$unset": {'admin_id' : 1}})
+                doc.pop('admin_id')
+            full.append(doc)
+        new_collection.insert_many(full)
         await state.finish()
         await bot.send_message(msg.from_user.id, "Воистину админь")
     elif text == 'Запуск парсера':
@@ -199,26 +203,22 @@ async def email(msg: types.Message, state: FSMContext):
     else:
         await bot.send_message(msg.from_user.id, 'Неверный формат')
 
-                            #режим внесения изменений
-@dp.message_handler(state=States.CHANGE, content_types=['text']) 
+@dp.message_handler(state=States.CHANGE, content_types=['text']) #режим внесения изменений
 async def change(msg: types.Message, state: FSMContext):
     text = msg.text
     board_4 = create_reply_keyboard()
     key_list = ['doljname', 'Fname', 'Name', 'Oname', 'Room', 'Phone', 'Mail'] 
-    #получает номер выбранного руководителя
-    if  text.isdigit():             
+    if  text.isdigit():             #получает номер выбранного руководителя
         code = int(text)-1
         change = adm_collection.find({}, {'_id' : 0, 'edited': 0}).skip(code).limit(1)
         full = db_list(change)
         user_id = msg.from_user.id
-        #проверка на существования такого номера в коллекции
-        if len(full) < 1:           
+        if len(full) < 1:           #проверка на существования такого номера в коллекции
             full_text = num_list()
             await bot.send_message(msg.from_user.id, full_text)
             await bot.send_message(msg.from_user.id, "Выбери кого редактироать клавиатуре!", reply_markup=board_4)
             return
-            #проверка admin_id, не допускает параллельного редактирования
-        elif len(full[0]) > 7:      
+        elif len(full[0]) > 7:      #проверка admin_id, не допускает параллельного редактирования
             if full[0][7] != str(user_id):
                 await bot.send_message(msg.from_user.id, 'Редактирование сейчас недоступно, выберите другого человека', reply_markup=board_4)
                 return
@@ -234,17 +234,14 @@ async def change(msg: types.Message, state: FSMContext):
                 full_text += str(value) + '\n'
         await bot.send_message(msg.from_user.id, full_text)
         await bot.send_message(msg.from_user.id, "Что будем менять?", reply_markup=board_2)
-        #возврат в режим админа
-    elif text == 'Назад':           
+    elif text == 'Назад':           #возврат в режим админа
         await state.set_state(States.ADMIN)
         await bot.send_message(msg.from_user.id, "Если это все, что ты хотел - жми 'Сохранить', "
                             "ну или выбирай, что будем делать", reply_markup=board_3)
-        #принимает параметр изменения и новые значения
-    else:                           
+    else:                           #принимает параметр изменения и новые значения
         butt_list = ['Должность', 'Фамилия', 'Имя', 'Отчество', 'Кабинет', 'Телефон', 'Email']
-        #запоминаем параметр изменения
         for i in range(len(butt_list)):
-            if text == butt_list[i]:
+            if text == butt_list[i]:#запоминаем параметр изменения
                 data = await state.get_data()
                 if 'code' in data:
                     await state.update_data(text=i)
@@ -255,8 +252,7 @@ async def change(msg: types.Message, state: FSMContext):
                 else:
                     await bot.send_message(msg.from_user.id, "Сначала выбери кого будем изменять", reply_markup=board_4)
         data = await state.get_data()
-        #проверка на параметр изменения&внесение изменений
-        if 'text' in data:          
+        if 'text' in data:          #проверка на параметр изменения&внесение изменений
             code = int(data['code'])    #номер руководителя в коллекции
             num = int(data['text'])     #параметр изменения
             change = adm_collection.find({}, {'_id' : 0, 'edited': 0}).skip(code-1).limit(1)
@@ -267,8 +263,8 @@ async def change(msg: types.Message, state: FSMContext):
             await bot.send_message(msg.from_user.id, "Если это все, что ты хотел - жми 'Сохранить', ну или выбирай, что будем делать", reply_markup=board_3)
         else:
             await bot.send_message(msg.from_user.id, "Выбери, что будем менять на клавиатуре, либо напиши 'Назад', вернуться", reply_markup=board_2)
-                            #режим редактирования кабинета
-@dp.message_handler(state=States.CHANGE_ROOM, content_types=['text'])
+
+@dp.message_handler(state=States.CHANGE_ROOM, content_types=['text'])#режим редактирования кабинета
 async def change_room(msg: types.Message, state: FSMContext):
     text = msg.text
     key_list = ['doljname', 'Fname', 'Name', 'Oname', 'Room', 'Phone', 'Mail']
@@ -283,8 +279,7 @@ async def change_room(msg: types.Message, state: FSMContext):
     await state.set_state(States.ADMIN)
     await bot.send_message(msg.from_user.id, "Если это все, что ты хотел - жми 'Сохранить', ну или выбирай, что будем делать", reply_markup=board_3)
 
-                            #режим удаления
-@dp.message_handler(state=States.DELETE, content_types=['text'])
+@dp.message_handler(state=States.DELETE, content_types=['text'])#режим удаления
 async def delete(msg: types.Message, state: FSMContext):
     text = msg.text
     board_4 = create_reply_keyboard()
@@ -293,14 +288,12 @@ async def delete(msg: types.Message, state: FSMContext):
         delete = adm_collection.find({}, {'_id' : 0, 'edited': 0}).skip(code).limit(1)
         full = db_list(delete)
         user_id = msg.from_user.id
-        #проверка на существования такого номера в коллекции
-        if len(full) < 1:           
+        if len(full) < 1:           #проверка на существования такого номера в коллекции
             full_text = num_list()
             await bot.send_message(msg.from_user.id, full_text)
             await bot.send_message(msg.from_user.id, "Выбери кого удалить клавиатуре!", reply_markup=board_4)
             return
-            #проверка admin_id
-        elif len(full[0]) > 7:      
+        elif len(full[0]) > 7:      #проверка admin_id
             if full[0][7] != str(user_id):
                 await bot.send_message(msg.from_user.id, 'Редактирование сейчас недоступно, выберите другого человека', reply_markup=board_4)
                 return
@@ -308,16 +301,14 @@ async def delete(msg: types.Message, state: FSMContext):
             new_doc = {'admin_id' : f'{user_id}'}
             old_doc = {'doljname' : full[0][0], 'Fname':full[0][1], 'Name':full[0][2], 'Oname':full[0][3], 'Room':full[0][4], 'Phone':full[0][5], 'Mail':full[0][6]}
             adm_collection.update_one(old_doc, {"$set": new_doc})
-            adm_collection.remove(old_doc)    #удаление документа
+        adm_collection.remove(old_doc)    #удаление документа
         await state.set_state(States.ADMIN)
         await bot.send_message(msg.from_user.id, "Если это все, что ты хотел - жми 'Сохранить', ну или выбирай, что будем делать", reply_markup=board_3)
 
-                            #вывод инфы по командам edit & worker
-@dp.message_handler(content_types=['text'], state = '*')
+@dp.message_handler(content_types=['text'], state = '*')#вывод инфы по коммандам edit & worker
 async def echo(msg: types.Message, state: FSMContext):
     text = msg.text
-    #edit
-    if text == 'Полная':    
+    if text == 'Полная':    #edit
         js = new_collection.find({}, { '_id' : 0, 'edited': 0})
         full = db_list(js)
         for elem in full:
@@ -325,8 +316,8 @@ async def echo(msg: types.Message, state: FSMContext):
             for i in elem:
                 full_text += i + '\n'
             await bot.send_message(msg.chat.id, full_text)
-    elif text == 'Фио':     
-        js = new_collection.find({}, {'doljname' : 1, 'Fname' : 1, 'Name': 1, 'Oname': 1, '_id' : 0, 'edited': 0})
+    elif text == 'Фио':     #edit
+        js = new_collection.find({}, { 'doljname' : 1, 'Fname' : 1, 'Name': 1, 'Oname': 1, '_id' : 0, 'edited': 0})
         full = db_list(js)
         for elem in full:
             full_text = []
@@ -335,8 +326,7 @@ async def echo(msg: types.Message, state: FSMContext):
             full_text.insert(1, '-')
             full_text = ' '.join(full_text)
             await bot.send_message(msg.chat.id, full_text)
-        #worker
-    elif text.isdigit():   
+    elif text.isdigit():    #worker
         js = new_collection.find({}, { '_id' : 0, 'edited': 0})
         full = db_list(js)
         code = int(text)-1
@@ -346,6 +336,9 @@ async def echo(msg: types.Message, state: FSMContext):
                 for g in full[i]:
                     full_text += str(g) + '\n'
                 await bot.send_message(msg.chat.id, full_text)
+    elif text == PASSWORD:
+        await state.set_state(States.ADMIN)
+        await bot.send_message(msg.from_user.id, "Админь", reply_markup=board_3)
     else:
         await bot.send_message(msg.chat.id, 'Я не знаю таких слов')
 
