@@ -60,8 +60,8 @@ async def admin_command(msg: types.Message, state: FSMContext):
     acsess = await bot.get_chat_member(msg.chat.id, user_id)
     if acsess['status'] == 'administrator' or acsess['status'] == 'creator':
         await state.set_state(States.ADMIN)
-        t = Timer(600, save_adm(user_id, state))
-        t.start()
+        #t = Timer(600, save_adm(user_id, state))
+        #t.start()
         await bot.send_message(msg.from_user.id, "Админь", reply_markup=board_3)
         return
     else:
