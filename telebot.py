@@ -104,7 +104,7 @@ async def admin(msg: types.Message, state: FSMContext):
         await bot.send_message(msg.from_user.id, full_text)
         await bot.send_message(msg.from_user.id, "Это весь список, кого будем удалять?", reply_markup=board_4)
     elif text == 'Сохранить': #обновление коллекции, сброс состояния
-        save_adm(user_id, state)
+        await save_adm(user_id, state)
         await bot.send_message(msg.from_user.id, "Воистину админь")
     elif text == 'Запуск парсера':
         parser()
