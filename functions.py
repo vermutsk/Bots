@@ -86,7 +86,7 @@ def parser():
     adm_collection.insert_many(list_of_posts)
     list_of_posts.clear()
 
-async def save_adm(user_id, state):
+def save_adm(user_id, state):
     new_collection.remove({})
     docs = adm_collection.find({},{'_id' : 0,'edited': 0})
     full = []
@@ -97,7 +97,7 @@ async def save_adm(user_id, state):
             doc.pop('admin_id')
         full.append(doc)
     new_collection.insert_many(full)
-    await state.finish()
+    
 
 def db_list(js):
     many_doc = []
