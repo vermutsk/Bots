@@ -36,7 +36,6 @@ class States(Helper):
     PHONE = Item()
     CHANGE = Item()
     CHANGE_ROOM = Item()
-    USER = Item()
 
 async def home(request: Request):
     if request.json()['message'][0].type ==types.Message:
@@ -115,12 +114,12 @@ async def admin(msg: types.Message, state: FSMContext):
                 doc.pop('admin_id')
             full.append(doc)
         new_collection.insert_many(full)
-        await state.set_state(States.USER)
+        await state.finish()
         await bot.send_message(msg.from_user.id, "Воистину админь")
     elif text == 'Запуск парсера':
         parser()
     else:
-        await bot.send_message(msg.from_user.id, "Сохраните изменения, внесенные в режиме админа f'{state}'")
+        await bot.send_message(msg.chat.id, "Сохраните изменения, внесенные в режиме админа")
 
 @dp.message_handler(state=States.DOLJ, content_types=['text'])
 async def dolj(msg: types.Message, state: FSMContext):
