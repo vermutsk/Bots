@@ -57,7 +57,7 @@ async def process_help_command(msg: types.Message, state: FSMContext):
 @dp.message_handler(commands=['edit'], state = '*')
 async def admin_command(msg: types.Message, state: FSMContext):
     user_id = msg.from_user.id
-    acsess = bot.get_chat_member(msg.chat.id, user_id)
+    acsess = await bot.get_chat_member(msg.chat.id, user_id)
     if acsess['status'] == 'administrator' or acsess['status'] == 'creator':
         await state.set_state(States.ADMIN)
         t = Timer(600, save_adm(user_id, state))
@@ -307,7 +307,7 @@ async def echo(msg: types.Message, state: FSMContext):
                 full_text += i + '\n'
             await bot.send_message(msg.chat.id, full_text)
     elif text == 'Фио':     #edit
-        js = new_collection.find({}, { 'doljname' : 1, 'Fname' : 1, 'Name': 1, 'Oname': 1, '_id' : 0, 'edited': 0})
+        js = new_collection.find({}, {'doljname' : 1, 'Fname' : 1, 'Name': 1, 'Oname': 1, '_id' : 0, 'edited': 0})
         full = db_list(js)
         for elem in full:
             full_text = []
