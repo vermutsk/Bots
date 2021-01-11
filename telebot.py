@@ -36,7 +36,6 @@ class States(Helper):
     PHONE = Item()
     CHANGE = Item()
     CHANGE_ROOM = Item()
-    USER = Iten()
 
 async def home(request: Request):
     if request.json()['message'][0].type ==types.Message:
@@ -115,7 +114,7 @@ async def admin(msg: types.Message, state: FSMContext):
                 doc.pop('admin_id')
             full.append(doc)
         new_collection.insert_many(full)
-        await state.set_state(States.USER)
+        await state.finish()
         await bot.send_message(msg.from_user.id, "Воистину админь")
     elif text == 'Запуск парсера':
         parser()
@@ -126,12 +125,7 @@ async def admin(msg: types.Message, state: FSMContext):
 async def dolj(msg: types.Message, state: FSMContext):
     dolj = msg.text                             #получаем текст из сообщения
     if dolj.isalpha(): 
-        change = adm_collection.find({}, {'_id' : 0, 'edited': 0})
-        full = db_list(change)
-        for i in range(len(full)):
-            if dolj in full[i]:
-                await bot.send_message(msg.from_user.id, 'Руководитель с такой должностью уже существует')
-                return
+        #проверка на совпадение по долж в бд.............................................................................................
         await state.set_state(States.ADMIN)     #смена состояния на админку
         await state.update_data(doljname=dolj)  #привязка текущей инфы к состоянию
         await state.set_state(States.FIO)       #смена состояния на следующее
