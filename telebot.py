@@ -314,7 +314,7 @@ async def echo(msg: types.Message, state: FSMContext):
         for elem in full:
             full_text = ''
             for i in elem:
-                full_text += i + '\n'
+                full_text += str(i) + '\n'
             await bot.send_message(msg.chat.id, full_text)
     elif text == 'Фио':     #edit
         js = new_collection.find({}, { 'doljname' : 1, 'Fname' : 1, 'Name': 1, 'Oname': 1, '_id' : 0, 'edited': 0})
