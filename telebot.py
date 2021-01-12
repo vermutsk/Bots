@@ -157,7 +157,7 @@ async def fio(msg: types.Message, state: FSMContext):
 
 @dp.message_handler(state=States.ADRESS, content_types=['text'])
 async def adress(msg: types.Message, state: FSMContext):
-    adress = msg.text
+    adress = str(msg.text)
     if adress.isalnum():
         await state.set_state(States.ADMIN)
         await state.update_data(Room=adress)
@@ -168,7 +168,7 @@ async def adress(msg: types.Message, state: FSMContext):
 
 @dp.message_handler(state=States.PHONE, content_types=['text'])
 async def phone(msg: types.Message, state: FSMContext):
-    phone = msg.text
+    phone = str(msg.text)
     if phone.isdigit() is False:
         await bot.send_message(msg.from_user.id, 'Неверный формат')
     elif phone.count('+') == 0 and phone[1:].isdigit() is False:
