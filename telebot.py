@@ -201,11 +201,7 @@ async def change(msg: types.Message, state: FSMContext):
             await bot.send_message(msg.chat.id, "Выбери кого редактироать клавиатуре!", reply_markup=board_4)
             return
         elif 'admin_id' in full[0]:      #проверка admin_id, не допускает параллельного редактирования
-            g = 0
-            for i in range(len(full[0])):
-                if full[0][i] != str(user_id):
-                    g += 1
-            if g == len(full[0]):
+            if full[0][7] != str(user_id):
                 await bot.send_message(msg.chat.id, 'Редактирование сейчас недоступно, выберите другого человека', reply_markup=board_4)
                 return
         else:
@@ -305,14 +301,14 @@ async def echo(msg: types.Message, state: FSMContext):
     elif text == 'Фио':     #edit
         js = new_collection.find({}, { 'Phone' : 0, 'Room' : 0, 'Mail': 0, '_id' : 0})
         full = db_list(js)
-        full_text = []
         str0 = ''
         for elem in full:
+            full_text = []
             for i in elem:
                 full_text.append(str(i))
             full_text.insert(1, '-')
             full_text = ' '.join(full_text)
-            str0 += full_text + '\n'
+            str0 += full_text + '\n\n'
         await bot.send_message(msg.chat.id, str0)
     elif text.isdigit():    #worker
         js = new_collection.find({}, { '_id' : 0, 'edited': 0})
