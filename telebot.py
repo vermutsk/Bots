@@ -230,16 +230,17 @@ async def change(msg: types.Message, state: FSMContext):
                             "ну или выбирай, что будем делать", reply_markup=board_3)
     else:                           #принимает параметр изменения и новые значения
         butt_list = ['Должность', 'Фамилия', 'Имя', 'Отчество', 'Кабинет', 'Телефон', 'Email']
-        if text in butt_list:#запоминаем параметр изменения
-            data = await state.get_data()
-            if 'code' in data:
-                await state.update_data(text=text)
-                if text == 'Кабинет':
-                    await state.set_state(States.CHANGE_ROOM)
-                await bot.send_message(msg.chat.id, "Введи новое значение")
-                return
-            else:
-                await bot.send_message(msg.chat.id, "Сначала выбери кого будем изменять", reply_markup=board_4)
+        for i in range(len(butt_list)):
+            if text == butt_list[i]:#запоминаем параметр изменения
+                data = await state.get_data()
+                if 'code' in data:
+                    await state.update_data(text=i)
+                    if i == 4:
+                        await state.set_state(States.CHANGE_ROOM)
+                    await bot.send_message(msg.chat.id, "Введи новое значение")
+                    return
+                else:
+                    await bot.send_message(msg.chat.id, "Сначала выбери кого будем изменять", reply_markup=board_4)
         data = await state.get_data()
         if 'text' in data:          #проверка на параметр изменения&внесение изменений
             code = int(data['code'])    #номер руководителя в коллекции
