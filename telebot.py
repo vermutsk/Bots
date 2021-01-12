@@ -148,26 +148,18 @@ async def fio(msg: types.Message, state: FSMContext):
 @dp.message_handler(state=States.ADRESS, content_types=['text'])
 async def adress(msg: types.Message, state: FSMContext):
     adress = str(msg.text)
-    if adress.isalnum():
-        await state.set_state(States.ADMIN)
-        await state.update_data(Room=adress)
-        await state.set_state(States.PHONE)
-        await bot.send_message(msg.chat.id, "Введи телефон: ")
-    else:
-        await bot.send_message(msg.chat.id, 'Неверный формат')
+    await state.set_state(States.ADMIN)
+    await state.update_data(Room=adress)
+    await state.set_state(States.PHONE)
+    await bot.send_message(msg.chat.id, "Введи телефон: ")
 
 @dp.message_handler(state=States.PHONE, content_types=['text'])
 async def phone(msg: types.Message, state: FSMContext):
     phone = str(msg.text)
-    if phone.isdigit() is False:
-        await bot.send_message(msg.chat.id, 'Неверный формат')
-    elif phone.count('+') == 0 and phone[1:].isdigit() is False:
-        await bot.send_message(msg.chat.id, 'Неверный формат')
-    else:
-        await state.set_state(States.ADMIN)
-        await state.update_data(Phone=phone)
-        await state.set_state(States.EMAIL)
-        await bot.send_message(msg.chat.id, "Введи email: ")
+    await state.set_state(States.ADMIN)
+    await state.update_data(Phone=phone)
+    await state.set_state(States.EMAIL)
+    await bot.send_message(msg.chat.id, "Введи email: ")
 
 @dp.message_handler(state=States.EMAIL, content_types=['text'])
 async def email(msg: types.Message, state: FSMContext):
@@ -209,7 +201,11 @@ async def change(msg: types.Message, state: FSMContext):
             await bot.send_message(msg.chat.id, "Выбери кого редактироать клавиатуре!", reply_markup=board_4)
             return
         elif 'admin_id' in full[0]:      #проверка admin_id, не допускает параллельного редактирования
-            if full[0]['admin_id'] != str(user_id):
+            g = 0
+            for i in range(len(full[0])):
+                if full[0][i] != str(user_id):
+                    g += 1
+            if g == len(full[0]):
                 await bot.send_message(msg.chat.id, 'Редактирование сейчас недоступно, выберите другого человека', reply_markup=board_4)
                 return
         else:
@@ -309,13 +305,15 @@ async def echo(msg: types.Message, state: FSMContext):
     elif text == 'Фио':     #edit
         js = new_collection.find({}, { 'Phone' : 0, 'Room' : 0, 'Mail': 0, '_id' : 0})
         full = db_list(js)
+        full_text = []
+        str0 = ''
         for elem in full:
-            full_text = []
             for i in elem:
                 full_text.append(str(i))
             full_text.insert(1, '-')
             full_text = ' '.join(full_text)
-            await bot.send_message(msg.chat.id, full_text)
+            str0 += full_text + '\n'
+        await bot.send_message(msg.chat.id, str0)
     elif text.isdigit():    #worker
         js = new_collection.find({}, { '_id' : 0, 'edited': 0})
         full = db_list(js)
