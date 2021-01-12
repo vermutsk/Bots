@@ -15,7 +15,7 @@ from starlette.middleware import Middleware
 from weebhook import set_weebhook
 from keyboard import board_1, board_2, board_3
 from functions import parser, db_list, num_list, create_reply_keyboard, save_adm
-from config import TOKEN, MAIN_DB, ADMIN_DB, PASSWORD
+from config import TOKEN, MAIN_DB, ADMIN_DB
 
 client = MongoClient("localhost", 27017) 
 db = client['NEW_DB']
@@ -326,9 +326,6 @@ async def echo(msg: types.Message, state: FSMContext):
                 for g in full[i]:
                     full_text += str(g) + '\n'
                 await bot.send_message(msg.chat.id, full_text)
-    elif text == PASSWORD:
-        await state.set_state(States.ADMIN)
-        await bot.send_message(msg.from_user.id, "Админь", reply_markup=board_3)
     else:
         await bot.send_message(msg.chat.id, 'Я не знаю таких слов')
 
