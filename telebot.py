@@ -103,7 +103,7 @@ async def admin(msg: types.Message, state: FSMContext):
         await bot.send_message(msg.chat.id, full_text)
         await bot.send_message(msg.chat.id, "Это весь список, кого будем удалять?", reply_markup=board_4)
     elif text == 'Сохранить': #обновление коллекции, сброс состояния
-        save_adm(user_id)
+        await save_adm(user_id)
         await state.finish()
         await bot.send_message(msg.chat.id, "Воистину админь")
     elif text == 'Запуск парсера':
@@ -230,17 +230,16 @@ async def change(msg: types.Message, state: FSMContext):
                             "ну или выбирай, что будем делать", reply_markup=board_3)
     else:                           #принимает параметр изменения и новые значения
         butt_list = ['Должность', 'Фамилия', 'Имя', 'Отчество', 'Кабинет', 'Телефон', 'Email']
-        for i in range(len(butt_list)):
-            if text == butt_list[i]:#запоминаем параметр изменения
-                data = await state.get_data()
-                if 'code' in data:
-                    await state.update_data(text=i)
-                    if i == 4:
-                        await state.set_state(States.CHANGE_ROOM)
-                    await bot.send_message(msg.chat.id, "Введи новое значение")
-                    return
-                else:
-                    await bot.send_message(msg.chat.id, "Сначала выбери кого будем изменять", reply_markup=board_4)
+        if text in butt_list:#запоминаем параметр изменения
+            data = await state.get_data()
+            if 'code' in data:
+                await state.update_data(text=text)
+                if text == 'Кабинет':
+                    await state.set_state(States.CHANGE_ROOM)
+                await bot.send_message(msg.chat.id, "Введи новое значение")
+                return
+            else:
+                await bot.send_message(msg.chat.id, "Сначала выбери кого будем изменять", reply_markup=board_4)
         data = await state.get_data()
         if 'text' in data:          #проверка на параметр изменения&внесение изменений
             code = int(data['code'])    #номер руководителя в коллекции
@@ -291,7 +290,7 @@ async def delete(msg: types.Message, state: FSMContext):
             new_doc = {'admin_id' : f'{user_id}'}
             old_doc = {'doljname' : full[0][0], 'Fname':full[0][1], 'Name':full[0][2], 'Oname':full[0][3], 'Room':full[0][4], 'Phone':full[0][5], 'Mail':full[0][6]}
             adm_collection.update_one(old_doc, {"$set": new_doc})
-        adm_collection.remove(old_doc)    #удаление документа
+            adm_collection.remove(old_doc)    #удаление документа
         await state.set_state(States.ADMIN)
         await bot.send_message(msg.chat.id, "Если это все, что ты хотел - жми 'Сохранить', ну или выбирай, что будем делать", reply_markup=board_3)
 
