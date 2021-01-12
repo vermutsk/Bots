@@ -200,10 +200,9 @@ async def change(msg: types.Message, state: FSMContext):
             await bot.send_message(msg.chat.id, full_text)
             await bot.send_message(msg.chat.id, "Выбери кого редактироать клавиатуре!", reply_markup=board_4)
             return
-        elif 'admin_id' in full[0]:      #проверка admin_id, не допускает параллельного редактирования
-            if full[0][7] != str(user_id):
-                await bot.send_message(msg.chat.id, 'Редактирование сейчас недоступно, выберите другого человека', reply_markup=board_4)
-                return
+        elif str(user_id) in full[0]:      #проверка admin_id, не допускает параллельного редактирования
+            await bot.send_message(msg.chat.id, 'Редактирование сейчас недоступно, выберите другого человека', reply_markup=board_4)
+            return
         else:
             new_doc = {'admin_id' : f'{user_id}'}
             adm_collection.update_one({'doljname' : full[0][0]}, {"$set": new_doc})
